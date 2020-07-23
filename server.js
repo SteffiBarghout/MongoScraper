@@ -4,40 +4,35 @@ var mongoose = require("mongoose");
 var express = require("express");
 //var express-handlebars
 var exphbs = require("express-handlebars");
-//var 
 
-// Create an instance of the express app.
+// Set up our port to be either the host's designated port, or 3000
+var PORT = process.env.PORT || 3000;
+
+// Instantiate our Express App
 var app = express();
 
-// Set the port of our application
-// process.env.PORT lets the port be set by Heroku
-var PORT = process.env.PORT || 8080;
+// Require our routes
+var routes = require("./routes");
 
-// Set Handlebars as the default templating engine.
+// Parse request body as JSON
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+// Make public a static folder
+app.use(express.static("public"));
+
+// Connect Handlebars to our Express app
 app.engine("handlebars", exphbs({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");
 
-// Requiring the `Example` model for accessing the `examples` collection
-var Example = require("./exampleModel.js");
+// Have every request go through our route middleware
+app.use(routes);
 
-// Connect to the Mongo DB
-mongoose.connect("mongodb://localhost/schemaexample", { useNewUrlParser: true });
+// If deployed, use the deployed database. Otherwise use the local mongoHeadlines database
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
 
-// Create an object containing dummy data to save to the database
-var data = {
-    array: ["item1", "item2", "item3"],
-    boolean: false,
-    string: "\"Don't worry if it doesn't work right. If everything did, you'd be out of a job\" - Mosher's Law of Software Engineering",
-    number: 42
-};
+mongoose.connect(MONGODB_URI);
 
-// Save a new Example using the data object
-Example.create(data)
-    .then(function(dbExample) {
-        // If saved successfully, print the new Example document to the console
-        console.log(dbExample);
-    })
-    .catch(function(err) {
-        // If an error occurs, log the error message
-        console.log(err.message);
-    });
+app.listen(PORT, function() {
+    // Log (server-side) when our server has started
+    console.log("Server listening on: http://localhost:" + PORT);
+});
